@@ -9,6 +9,7 @@ import { OidcStrategy } from './strategies/oidc.strategy.js';
   controllers: [AuthController],
   providers: [
     {
+      // Сборка конфига OIDC, что бы передать его в стратегию
       provide: client.Configuration,
       useFactory: () =>
         client.discovery(
