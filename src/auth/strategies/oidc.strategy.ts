@@ -16,9 +16,15 @@ export class OidcStrategy extends PassportStrategy(Strategy, 'oidc') {
   }
 
   // Запускается после обмена кода; ID-токен уже прошел валидацию.
+  // Произходит получение claims из проверенного ID token через tokens.claims() и запрос к UserInfo Endpoint через fetchUserInfo()
+  // из ранее полученного id token
   async validate(tokens: Tokens) {
     const claims = tokens.claims()!;
-    const info = await client.fetchUserInfo(this.config, tokens.access_token, claims.sub);
+    const info = await client.fetchUserInfo(
+      this.config,
+      tokens.access_token,
+      claims.sub,
+    );
     return { sub: claims.sub, email: info.email, name: info.name };
   }
 }
