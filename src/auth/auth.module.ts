@@ -13,9 +13,9 @@ import { OidcStrategy } from './strategies/oidc.strategy.js';
       provide: client.Configuration,
       useFactory: () =>
         client.discovery(
-          new URL(process.env.ISSUER!),
-          process.env.CLIENT_ID!,
-          process.env.CLIENT_SECRET!,
+          new URL(process.env.GOOGLE_ISSUER!),
+          process.env.GOOGLE_CLIENT_ID!,
+          process.env.GOOGLE_CLIENT_SECRET!,
         ),
     },
     OidcStrategy,

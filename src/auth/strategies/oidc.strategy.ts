@@ -11,7 +11,7 @@ export class OidcStrategy extends PassportStrategy(Strategy, 'oidc') {
     super({
       config,
       scope: 'openid email profile',
-      callbackURL: process.env.REDIRECT_URI!,
+      callbackURL: process.env.GOOGLE_REDIRECT_URI!,
     });
   }
 
