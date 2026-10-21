@@ -3,6 +3,7 @@ import { PassportModule } from '@nestjs/passport';
 import * as client from 'openid-client';
 import { AuthController } from './auth.controller.js';
 import { OidcStrategy } from './strategies/oidc.strategy.js';
+import { GithubStrategy } from './strategies/github.strategy.js';
 
 @Module({
   imports: [PassportModule.register({ session: true })],
@@ -19,6 +20,7 @@ import { OidcStrategy } from './strategies/oidc.strategy.js';
         ),
     },
     OidcStrategy,
+    GithubStrategy
   ],
 })
 export class AuthModule {}
