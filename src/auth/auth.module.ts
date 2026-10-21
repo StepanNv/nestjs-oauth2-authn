@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import * as client from 'openid-client';
 import { AuthController } from './auth.controller.js';
-import { OidcStrategy } from './strategies/oidc.strategy.js';
+import { GoogleStrategy } from './strategies/google.strategy.js';
 import { GithubStrategy } from './strategies/github.strategy.js';
 
 @Module({
@@ -19,7 +19,7 @@ import { GithubStrategy } from './strategies/github.strategy.js';
           process.env.GOOGLE_CLIENT_SECRET!,
         ),
     },
-    OidcStrategy,
+    GoogleStrategy,
     GithubStrategy
   ],
 })

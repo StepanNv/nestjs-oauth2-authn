@@ -6,7 +6,7 @@ import { Strategy, type VerifyFunction } from 'openid-client/passport';
 type Tokens = Parameters<VerifyFunction>[0];
 
 @Injectable()
-export class OidcStrategy extends PassportStrategy(Strategy, 'oidc') {
+export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(private readonly config: client.Configuration) {
     super({
       config,

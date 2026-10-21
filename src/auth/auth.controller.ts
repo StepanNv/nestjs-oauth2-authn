@@ -5,11 +5,11 @@ import type { Request, Response } from 'express';
 @Controller('auth')
 export class AuthController {
   @Get('google/login')
-  @UseGuards(AuthGuard('oidc'))
+  @UseGuards(AuthGuard('google'))
   googleLogin() {}
 
   @Get('google/callback')
-  @UseGuards(AuthGuard('oidc'))
+  @UseGuards(AuthGuard('google'))
   googleCallback(@Req() req: Request, @Res() res: Response) {
     req.login(req.user!, (err) => {
       if (err) {
