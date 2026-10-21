@@ -11,7 +11,17 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('oidc'))
   googleCallback(@Req() req: Request, @Res() res: Response) {
-    req.login(req.user!, () => res.redirect('/'));
+    req.login(req.user!, (err) => {
+      if (err) {
+        res.status(500).json({
+          message: 'Failed to save session',
+        });
+        return;
+      }
+
+      res.redirect('/auth/me');
+    });
+  }
   }
 
   @Get('me')
