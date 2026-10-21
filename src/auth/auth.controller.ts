@@ -6,7 +6,7 @@ import type { Request, Response } from 'express';
 export class AuthController {
   @Get('google/login')
   @UseGuards(AuthGuard('oidc'))
-  login() {}
+  googleLogin() {}
 
   @Get('google/callback')
   @UseGuards(AuthGuard('oidc'))
