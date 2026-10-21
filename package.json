@@ -30,6 +30,7 @@
     "express-session": "^1.19.0",
     "openid-client": "^6.8.8",
     "passport": "^0.7.0",
+    "passport-oauth2": "^1.8.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -42,6 +43,7 @@
     "@types/express-session": "^1.19.0",
     "@types/node": "^24.0.0",
     "@types/passport": "^1.0.17",
+    "@types/passport-oauth2": "^1.8.0",
     "@types/supertest": "^7.0.0",
     "@vitest/coverage-v8": "^4.1.2",
     "oxlint": "^1.58.0",
