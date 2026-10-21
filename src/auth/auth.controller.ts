@@ -10,7 +10,7 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(AuthGuard('oidc'))
-  callback(@Req() req: Request, @Res() res: Response) {
+  googleCallback(@Req() req: Request, @Res() res: Response) {
     req.login(req.user!, () => res.redirect('/'));
   }
 
