@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 
@@ -72,6 +80,10 @@ export class AuthController {
 
   @Get('me')
   me(@Req() req: Request) {
-    return req.user ?? null;
+    if (!req.user) {
+      throw new UnauthorizedException();
+    }
+
+    return req.user;
   }
 }
