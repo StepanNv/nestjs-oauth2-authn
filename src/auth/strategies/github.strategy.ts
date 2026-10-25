@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-oauth2';
+import type { GithubMeResponseDto } from '../dto/me-response.dto.js';
 
 type GithubProfile = {
   id: number;
@@ -36,7 +37,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     });
   }
 
-  async validate(accessToken: string) {
+  async validate(accessToken: string): Promise<GithubMeResponseDto> {
     const response = await fetch('https://api.github.com/user', {
       method: 'GET',
       headers: {

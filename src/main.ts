@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import session from 'express-session';
 import passport from 'passport';
@@ -30,6 +31,20 @@ async function bootstrap() {
 
   app.use(passport.initialize());
   app.use(passport.session()); // инициализирует работу passport с сессиями
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('OAuth2 Authentication API')
+    .setDescription('Session-based authentication with Google and GitHub.')
+    .setVersion('1.0')
+    .addCookieAuth('connect.sid')
+    .build();
+
+  SwaggerModule.setup(
+    'docs',
+    app,
+    () => SwaggerModule.createDocument(app, swaggerConfig),
+    { jsonDocumentUrl: 'docs-json' },
+  );
 
   await app.listen(process.env.PORT ?? 3000);
 }
