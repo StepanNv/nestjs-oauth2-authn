@@ -1,124 +1,219 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NestJS OAuth2 Auth
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Система аутентификации пользователей через Google и GitHub с использованием OAuth 2.0 и OpenID Connect. Позволяет войти через аккаунт стороннего сервиса и получить данные своего профиля после предоставления разрешения на доступ. Может быть использована как основа под более крупные системы аутентификации и авторизации пользователей.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Бэкенд написан на NestJS и TypeScript. Для входа через Google используется OpenID Connect, для GitHub — OAuth 2.0. После входа приложение создает сессию, по которой пользователь может получать свой профиль без повторной аутентификации.
 
-## Description
+## Что сделано в проекте
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Вход через Google:** реализован сценарий OpenID Connect на базе библиотеки `openid-client`. При запуске сервер загружает конфигурацию провайдера через discovery, а при входе запрашивает права `openid email profile`. После обмена кода на токены библиотека проверяет ID токен, затем приложение получает идентификатор, почту и имя пользователя через UserInfo Endpoint.
+- **Вход через GitHub:** реализован OAuth 2.0 Authorization Code Flow через `passport-oauth2`. Для защиты обмена используются `state` и PKCE. Полученный access токен используется для запроса к GitHub API (`/user`), а структура ответа проверяется перед сохранением профиля.
+- **Сессии пользователя:** после успешного входа Passport сохраняет профиль в серверной сессии. В браузере хранится cookie `connect.sid` с флагами `HttpOnly` и `SameSite=Lax`. При последующих запросах пользователь восстанавливается из сессии. В режиме `production` дополнительно включается флаг `Secure`.
+- **Получение своего профиля:** маршрут `/auth/me` возвращает данные пользователя из сессии. Если пользователь не вошел в приложение, сервер отвечает `401 Unauthorized`. Формат профиля зависит от сервиса, через который проходил вход.
+- **Выход из приложения:** маршрут `/auth/logout` завершает сессию Passport, удаляет ее из хранилища и очищает cookie в браузере. При этом аккаунт пользователя в Google или GitHub остается авторизованным.
 
-## Project setup
+_На данный момент приложение получает только базовый профиль пользователя. Доступ к другим данным сервисов, например файлам Google Drive или репозиториям GitHub, пока не реализован. Токены провайдеров не возвращаются клиенту и не сохраняются для дальнейших запросов._
 
-```bash
-$ pnpm install
+## Стек технологий
+
+**Backend:**
+
+- NestJS 12, TypeScript, Express
+- Passport и `@nestjs/passport` — стратегии аутентификации и работа с пользователем
+- `openid-client` 6 — OpenID Connect и получение профиля Google
+- `passport-oauth2` — OAuth 2.0 для GitHub
+- `express-session` — серверные сессии
+- `@nestjs/config` — переменные окружения
+
+**Инструменты:**
+
+- pnpm — пакетный менеджер
+- Oxlint — проверка кода
+- Prettier — форматирование
+
+## Структура проекта
+
+```text
+nestjs-oauth2-authn/
+├── src/
+│   ├── auth/
+│   │   ├── strategies/
+│   │   │   ├── google.strategy.ts   # Вход через Google и получение UserInfo
+│   │   │   └── github.strategy.ts   # Вход через GitHub и запрос профиля через API
+│   │   ├── auth.controller.ts       # Вход, callback, профиль и выход
+│   │   └── auth.module.ts           # Регистрация стратегий и Google discovery
+│   ├── app.module.ts               # Подключение конфигурации и модуля аутентификации
+│   └── main.ts                     # Запуск сервера, настройка сессий и Passport
+├── .env-example                    # Пример переменных окружения
+└── package.json
 ```
 
-## Compile and run the project
+## Быстрый запуск
+
+### Требования
+
+- Node.js 24
+- pnpm (`npm install -g pnpm`)
+- OAuth-приложения в Google и GitHub
+- Доступ к интернету для загрузки конфигурации Google и запросов к провайдерам
+
+---
+
+### 1. Клонирование репозитория
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+git clone https://github.com/StepanNv/nestjs-oauth2-authn.git
+cd nestjs-oauth2-authn
+pnpm i
 ```
 
-## Run tests
+---
+
+### 2. Настройка Google и GitHub
+
+**Google:**
+
+1. Создайте проект в Google Cloud и настройте экран согласия OAuth.
+2. Создайте OAuth-клиент типа **Web application**.
+3. В Authorized redirect URIs добавьте `http://localhost:3000/auth/google/callback`.
+4. Сохраните Client ID и Client Secret — они понадобятся для `.env`.
+
+Подробнее о настройке — в [документации Google](https://developers.google.com/identity/protocols/oauth2/web-server).
+
+**GitHub:**
+
+1. Откройте **Settings → Developer settings → OAuth Apps** и создайте новое OAuth-приложение.
+2. В Homepage URL укажите `http://localhost:3000`.
+3. В Authorization callback URL укажите `http://localhost:3000/auth/github/callback`.
+4. Сохраните Client ID и создайте Client Secret для `.env`.
+
+Подробнее о регистрации — в [документации GitHub](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app).
+
+---
+
+### 3. Настройка окружения
+
+Создайте файл `.env` в корне проекта:
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+cp .env-example .env
 ```
 
-## Deployment
+_(в Windows PowerShell: `Copy-Item .env-example .env`)_
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Заполните идентификаторы, секреты и callback-адреса обоих провайдеров. Для `GOOGLE_ISSUER` укажите `https://accounts.google.com`. Все переменные с примерами перечислены ниже в разделе «Переменные окружения».
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Для `SESSION_SECRET`, который используется для подписи cookie общей сессии приложения, сгенерируйте случайную строку и вставьте в `.env` :
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+_Оба провайдера инициализируются при запуске, поэтому нужно заполнить настройки и Google, и GitHub. Файл `.env` исключен из Git через `.gitignore`._
 
-## Observability
+---
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project:
+### 4. Запуск сервера
 
 ```bash
-$ pnpm install @nestjs/observe
+pnpm run start:dev
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+Сервер запустится по адресу `http://localhost:3000`.
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+Для проверки откройте в браузере один из маршрутов:
 
-## Resources
+- [Вход через Google](http://localhost:3000/auth/google/login)
+- [Вход через GitHub](http://localhost:3000/auth/github/login)
 
-Check out a few resources that may come in handy when working with NestJS:
+После входа и выдачи разрешения приложение перенаправит на `/auth/me`, где отобразится JSON с профилем пользователя. Отдельного интерфейса в проекте нет. Корневой маршрут `/` не реализован и отвечает `404`.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+## Swagger документация
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+После запуска сервера интерактивная документация API доступна по адресу [http://localhost:3000/docs](http://localhost:3000/docs). В ней описаны маршруты аутентификации, форматы профилей и возможные ответы сервера.
 
-## Stay in touch
+Спецификация OpenAPI в формате JSON: [http://localhost:3000/docs-json](http://localhost:3000/docs-json).
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+---
 
-## License
+## Маршруты API
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+| Метод  | Маршрут                 | Описание                                              |
+| ------ | ----------------------- | ----------------------------------------------------- |
+| `GET`  | `/auth/google/login`    | Начало входа через Google                             |
+| `GET`  | `/auth/google/callback` | Обработка ответа Google и создание сессии             |
+| `GET`  | `/auth/github/login`    | Начало входа через GitHub                             |
+| `GET`  | `/auth/github/callback` | Обработка ответа GitHub и создание сессии             |
+| `GET`  | `/auth/me`              | Профиль пользователя из сессии или `401 Unauthorized` |
+| `POST` | `/auth/logout`          | Завершение сессии и ответ `204 No Content`            |
+
+Callback-маршруты вызываются при возвращении от провайдера после входа. Открывать их вручную не нужно.
+
+**Пример профиля Google:**
+
+```json
+{
+  "sub": "123456789012345678901",
+  "email": "user@example.com",
+  "name": "Example User"
+}
+```
+
+**Пример профиля GitHub:**
+
+```json
+{
+  "provider": "github",
+  "providerId": "12345678",
+  "login": "example-user",
+  "name": "Example User"
+}
+```
+
+У GitHub поле `name` может быть `null`, email не запрашивается. У Google поля `email` и `name` будут отсутствовать в JSON, если провайдер их не вернет.
+
+Выйти можно через [страницу Swagger](http://localhost:3000/docs): откройте `POST /auth/logout`, нажмите **Try it out**, затем **Execute**.
+
+Или выполните в консоли браузера на странице приложения:
+
+```javascript
+await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' });
+```
+
+---
+
+## Переменные окружения
+
+Настройки сервера задаются в файле `.env` в корне проекта:
+
+| Переменная             | Описание                                                       | Пример                                       |
+| ---------------------- | -------------------------------------------------------------- | -------------------------------------------- |
+| `NODE_ENV`             | Режим работы; в `production` cookie передается только по HTTPS | `development`                                |
+| `PORT`                 | Порт сервера, по умолчанию `3000`                              | `3000`                                       |
+| `GOOGLE_ISSUER`        | Адрес Google OpenID Provider для discovery                     | `https://accounts.google.com`                |
+| `GOOGLE_CLIENT_ID`     | Идентификатор OAuth-клиента Google                             | `your_google_client_id`                      |
+| `GOOGLE_CLIENT_SECRET` | Секрет OAuth-клиента Google                                    | `your_google_client_secret`                  |
+| `GOOGLE_REDIRECT_URI`  | Callback для входа через Google                                | `http://localhost:3000/auth/google/callback` |
+| `GITHUB_CLIENT_ID`     | Идентификатор OAuth-приложения GitHub                          | `your_github_client_id`                      |
+| `GITHUB_CLIENT_SECRET` | Секрет OAuth-приложения GitHub                                 | `your_github_client_secret`                  |
+| `GITHUB_REDIRECT_URI`  | Callback для входа через GitHub                                | `http://localhost:3000/auth/github/callback` |
+| `SESSION_SECRET`       | Секрет подписи cookie сессии для обоих провайдеров             | `bananchik123`                               |
+
+Адреса callback в `.env` должны совпадать с адресами, указанными в настройках провайдеров. При изменении порта обновите их в обоих местах. Для входа и последующих запросов используйте один хост: `localhost` и `127.0.0.1` не используют общую cookie.
+
+---
+
+## Особенности текущей реализации
+
+- Сессии хранятся в памяти процесса и теряются при перезапуске сервера. Для постоянного хранения и запуска нескольких экземпляров приложения понадобится внешнее хранилище сессий.
+- Базы пользователей, объединения Google и GitHub в один аккаунт и системы ролей пока нет.
+- Обновление и отзыв токенов провайдеров не реализованы. Выход завершает только локальную сессию приложения и не отзывает разрешение на доступ к профилю.
+- В режиме `production` для cookie требуется HTTPS. Если TLS завершается на reverse proxy, потребуется настроить доверие к прокси.
+
+---
+
+## Автор
+
+GitHub: [@StepanNv](https://github.com/StepanNv)
