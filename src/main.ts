@@ -17,7 +17,7 @@ async function bootstrap() {
 
   app.use(
     session({
-      secret: process.env.GOOGLE_SESSION_SECRET!, // ключ для подписи cookie сессии
+      secret: process.env.SESSION_SECRET!, // ключ для подписи cookie сессии
       resave: false, // не сохранять сессию заново, если она не менялась
       saveUninitialized: false, // не создавать пустые сессии
       cookie: {
