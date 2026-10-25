@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 
@@ -40,6 +40,34 @@ export class AuthController {
 
       res.redirect('/auth/me');
     });
+  }
+
+  @Post('logout')
+  async logout(@Req() req: Request, @Res() res: Response) {
+    await new Promise<void>((resolve, reject) => {
+      req.logout((err: unknown) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve();
+      });
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      req.session.destroy((err: unknown) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve();
+      });
+    });
+
+    res.clearCookie('connect.sid', { path: '/' });
+    res.status(204).send();
   }
 
   @Get('me')
